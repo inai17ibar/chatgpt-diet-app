@@ -2,7 +2,16 @@ import tempfile
 from pathlib import Path
 
 from instagrapi import Client
-from instagrapi.exceptions import LoginRequired
+from instagrapi.exceptions import (
+    BadPassword,
+    ChallengeRequired,
+    LoginRequired,
+    PleaseWaitFewMinutes,
+    RecaptchaChallengeForm,
+    ReloginAttemptExceeded,
+    SelectContactPointRecoveryForm,
+    TwoFactorRequired,
+)
 
 from app.config import settings
 
@@ -12,33 +21,79 @@ class InstagramService:
         self.client = Client()
         self.session_file = Path("instagram_session.json")
         self._logged_in = False
+        self._last_error = None
+
+    def get_last_error(self) -> str | None:
+        """最後のエラーメッセージを取得"""
+        return self._last_error
 
     async def login(self) -> bool:
         """Instagramにログイン（セッションキャッシュ対応）"""
         if self._logged_in:
             return True
 
+        self._last_error = None
+
         try:
             # Try to load existing session
             if self.session_file.exists():
-                self.client.load_settings(self.session_file)
-                self.client.login(settings.instagram_username, settings.instagram_password)
                 try:
+                    self.client.load_settings(self.session_file)
+                    self.client.login(settings.instagram_username, settings.instagram_password)
                     self.client.get_timeline_feed()
                     self._logged_in = True
+                    print("Instagram login successful (from session)")
                     return True
                 except LoginRequired:
-                    # Session expired, re-login
-                    pass
+                    print("Session expired, attempting fresh login...")
+                except Exception as e:
+                    print(f"Session load failed: {e}, attempting fresh login...")
 
             # Fresh login
             self.client.login(settings.instagram_username, settings.instagram_password)
             self.client.dump_settings(self.session_file)
             self._logged_in = True
+            print("Instagram login successful (fresh login)")
             return True
 
+        except BadPassword:
+            self._last_error = "パスワードが間違っています"
+            print(f"Instagram login failed: {self._last_error}")
+            return False
+
+        except TwoFactorRequired:
+            self._last_error = "2要素認証が必要です。Instagramの設定で2FAを無効にするか、認証コード対応を実装してください"
+            print(f"Instagram login failed: {self._last_error}")
+            return False
+
+        except ChallengeRequired as e:
+            self._last_error = f"ログインチャレンジが必要です。Instagramアプリまたはメールで承認してください: {e}"
+            print(f"Instagram login failed: {self._last_error}")
+            return False
+
+        except RecaptchaChallengeForm:
+            self._last_error = "reCAPTCHA認証が必要です。しばらく待ってから再試行してください"
+            print(f"Instagram login failed: {self._last_error}")
+            return False
+
+        except SelectContactPointRecoveryForm:
+            self._last_error = "アカウント回復が必要です。Instagramアプリで確認してください"
+            print(f"Instagram login failed: {self._last_error}")
+            return False
+
+        except PleaseWaitFewMinutes:
+            self._last_error = "リクエストが多すぎます。数分待ってから再試行してください"
+            print(f"Instagram login failed: {self._last_error}")
+            return False
+
+        except ReloginAttemptExceeded:
+            self._last_error = "ログイン試行回数を超えました。しばらく待ってから再試行してください"
+            print(f"Instagram login failed: {self._last_error}")
+            return False
+
         except Exception as e:
-            print(f"Instagram login failed: {e}")
+            self._last_error = f"不明なエラー: {type(e).__name__}: {e}"
+            print(f"Instagram login failed: {self._last_error}")
             return False
 
     async def post_photo(self, image_data: bytes, caption: str) -> str | None:

@@ -111,7 +111,9 @@ async def create_and_post(
         try:
             post_id = await instagram_service.post_photo(image_data, caption)
         except Exception as e:
-            error = str(e)
+            # Get detailed error message if available
+            detailed_error = instagram_service.get_last_error()
+            error = detailed_error if detailed_error else str(e)
 
     # Save to database
     meal_log = MealLog(

@@ -159,18 +159,27 @@ async def generate_caption(pfc: PFCData, description: str = "", has_photo: bool 
     return caption
 
 
-IMAGE_PROMPT_TEMPLATE = """白背景でミニマルなデザイン。
-中央に大きく「P {protein} / F {fat} / C {carbs}」と記載。
-その下に「{calories} kcal」と表示。
-右下に小さく「#chatgptダイエット」の文字。
-落ち着いたパステルカラー（薄いグリーンやブルー）のアクセント。
-余白の多い、清潔感のある構図。
-フラットデザイン、イラスト調。"""
+IMAGE_PROMPT_TEMPLATE = """A beautiful Instagram-style food photography flat lay composition.
+Top-down view of an elegant marble or wooden table surface.
+In the center, artistic illustration of healthy meals: {food_description}.
+The food is arranged beautifully with garnishes and small decorative elements.
+On the side, a stylish nutrition info card showing:
+"P {protein}g / F {fat}g / C {carbs}g"
+"{calories} kcal"
+Soft natural lighting from the side, creating gentle shadows.
+Warm, inviting color palette with fresh greens, appetizing food colors.
+Professional food styling, clean aesthetic, Instagram-worthy composition.
+Minimalist design with plenty of white space.
+NO text other than the nutrition numbers. Photorealistic food illustration style."""
 
 
-async def generate_placeholder_image(pfc: PFCData) -> bytes:
+async def generate_placeholder_image(pfc: PFCData, description: str = "") -> bytes:
     """写真がない場合の代替画像を生成（DALL-E）"""
+    # 食事の説明がなければデフォルトを使用
+    food_desc = description if description else "a balanced healthy meal with protein, vegetables, and whole grains"
+
     prompt = IMAGE_PROMPT_TEMPLATE.format(
+        food_description=food_desc,
         protein=int(pfc.protein),
         fat=int(pfc.fat),
         carbs=int(pfc.carbs),

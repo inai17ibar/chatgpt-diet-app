@@ -38,34 +38,121 @@
             margin-bottom: 20px;
         }
 
-        .input-group {
+        .date-input {
             margin-bottom: 20px;
         }
 
-        label {
+        .date-input label {
             display: block;
             font-weight: 600;
             margin-bottom: 8px;
             color: #333;
         }
 
-        textarea {
+        .date-input input {
             width: 100%;
-            padding: 16px;
+            padding: 12px 16px;
             border: 2px solid #e0e0e0;
             border-radius: 12px;
             font-size: 16px;
+        }
+
+        .meal-section {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .meal-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .meal-icon {
+            font-size: 1.5rem;
+        }
+
+        .meal-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .meal-section textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
             resize: vertical;
-            min-height: 100px;
+            min-height: 60px;
             transition: border-color 0.3s;
         }
 
-        textarea:focus {
+        .meal-section textarea:focus {
             outline: none;
             border-color: #667eea;
         }
 
-        button {
+        .photo-upload {
+            margin-top: 12px;
+        }
+
+        .photo-upload-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            background: #e8f0fe;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .photo-upload-label:hover {
+            background: #d4e2fc;
+        }
+
+        .photo-upload input[type="file"] {
+            display: none;
+        }
+
+        .photo-preview {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .photo-preview.show {
+            display: block;
+        }
+
+        .photo-preview img {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .photo-preview .remove-btn {
+            display: block;
+            margin-top: 8px;
+            padding: 8px;
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button.submit-btn {
             width: 100%;
             padding: 16px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -78,12 +165,12 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        button:hover {
+        button.submit-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
         }
 
-        button:disabled {
+        button.submit-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
             transform: none;
@@ -143,7 +230,7 @@
         }
 
         .pfc-label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #666;
             margin-top: 4px;
         }
@@ -202,14 +289,15 @@
         .action-buttons button {
             padding: 14px;
             font-size: 14px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
         }
 
         .btn-secondary {
             background: #333;
-        }
-
-        .btn-instagram {
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            color: white;
         }
 
         .error {
@@ -227,7 +315,28 @@
 
         .new-record-btn {
             margin-top: 20px;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
         }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .meal-breakfast { border-left: 4px solid #FFB74D; }
+        .meal-lunch { border-left: 4px solid #4CAF50; }
+        .meal-dinner { border-left: 4px solid #5C6BC0; }
+        .meal-snack { border-left: 4px solid #EC407A; }
     </style>
 </head>
 <body>
@@ -236,11 +345,89 @@
 
         <!-- 入力フォーム -->
         <div class="card" id="inputCard">
-            <div class="input-group">
-                <label for="mealInput">今日食べたものを入力</label>
-                <textarea id="mealInput" placeholder="例：サラダチキン、味噌汁、ご飯半分"></textarea>
+            <!-- 日付 -->
+            <div class="date-input">
+                <label for="dateInput">📅 日付</label>
+                <input type="date" id="dateInput">
             </div>
-            <button id="submitBtn" onclick="submitMeal()">
+
+            <!-- 朝ごはん -->
+            <div class="meal-section meal-breakfast">
+                <div class="meal-header">
+                    <span class="meal-icon">🌅</span>
+                    <span class="meal-title">朝ごはん</span>
+                </div>
+                <textarea id="breakfastInput" placeholder="例：トースト、目玉焼き、コーヒー"></textarea>
+                <div class="photo-upload">
+                    <label class="photo-upload-label" for="breakfastPhoto">
+                        📷 写真を追加
+                    </label>
+                    <input type="file" id="breakfastPhoto" accept="image/*" onchange="previewPhoto('breakfast')">
+                    <div class="photo-preview" id="breakfastPreview">
+                        <img id="breakfastPreviewImg" src="">
+                        <button class="remove-btn" onclick="removePhoto('breakfast')">写真を削除</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 昼ごはん -->
+            <div class="meal-section meal-lunch">
+                <div class="meal-header">
+                    <span class="meal-icon">☀️</span>
+                    <span class="meal-title">昼ごはん</span>
+                </div>
+                <textarea id="lunchInput" placeholder="例：サラダチキン、味噌汁、ご飯"></textarea>
+                <div class="photo-upload">
+                    <label class="photo-upload-label" for="lunchPhoto">
+                        📷 写真を追加
+                    </label>
+                    <input type="file" id="lunchPhoto" accept="image/*" onchange="previewPhoto('lunch')">
+                    <div class="photo-preview" id="lunchPreview">
+                        <img id="lunchPreviewImg" src="">
+                        <button class="remove-btn" onclick="removePhoto('lunch')">写真を削除</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 夜ごはん -->
+            <div class="meal-section meal-dinner">
+                <div class="meal-header">
+                    <span class="meal-icon">🌙</span>
+                    <span class="meal-title">夜ごはん</span>
+                </div>
+                <textarea id="dinnerInput" placeholder="例：焼き魚、サラダ、豆腐"></textarea>
+                <div class="photo-upload">
+                    <label class="photo-upload-label" for="dinnerPhoto">
+                        📷 写真を追加
+                    </label>
+                    <input type="file" id="dinnerPhoto" accept="image/*" onchange="previewPhoto('dinner')">
+                    <div class="photo-preview" id="dinnerPreview">
+                        <img id="dinnerPreviewImg" src="">
+                        <button class="remove-btn" onclick="removePhoto('dinner')">写真を削除</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 間食 -->
+            <div class="meal-section meal-snack">
+                <div class="meal-header">
+                    <span class="meal-icon">🍪</span>
+                    <span class="meal-title">間食</span>
+                </div>
+                <textarea id="snackInput" placeholder="例：プロテインバー、ナッツ"></textarea>
+                <div class="photo-upload">
+                    <label class="photo-upload-label" for="snackPhoto">
+                        📷 写真を追加
+                    </label>
+                    <input type="file" id="snackPhoto" accept="image/*" onchange="previewPhoto('snack')">
+                    <div class="photo-preview" id="snackPreview">
+                        <img id="snackPreviewImg" src="">
+                        <button class="remove-btn" onclick="removePhoto('snack')">写真を削除</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="submit-btn" id="submitBtn" onclick="submitMeal()">
                 PFCを計算する
             </button>
         </div>
@@ -305,13 +492,93 @@
         const API_KEY = '26c128ce99310f92692f649f3c15abc17a8927344e2fb527a5c41e82feec8fd4';
         let currentImageBase64 = '';
         let currentCaption = '';
+        const photoData = {
+            breakfast: null,
+            lunch: null,
+            dinner: null,
+            snack: null
+        };
+
+        // 今日の日付をセット
+        document.getElementById('dateInput').valueAsDate = new Date();
+
+        function previewPhoto(mealType) {
+            const input = document.getElementById(`${mealType}Photo`);
+            const preview = document.getElementById(`${mealType}Preview`);
+            const previewImg = document.getElementById(`${mealType}PreviewImg`);
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.classList.add('show');
+                    // Base64データを保存（data:image/...;base64, の部分を除去）
+                    photoData[mealType] = e.target.result.split(',')[1];
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function removePhoto(mealType) {
+            const input = document.getElementById(`${mealType}Photo`);
+            const preview = document.getElementById(`${mealType}Preview`);
+            const previewImg = document.getElementById(`${mealType}PreviewImg`);
+
+            input.value = '';
+            previewImg.src = '';
+            preview.classList.remove('show');
+            photoData[mealType] = null;
+        }
 
         async function submitMeal() {
-            const mealInput = document.getElementById('mealInput').value.trim();
-            if (!mealInput) {
-                alert('食事内容を入力してください');
+            const date = document.getElementById('dateInput').value;
+            const breakfast = document.getElementById('breakfastInput').value.trim();
+            const lunch = document.getElementById('lunchInput').value.trim();
+            const dinner = document.getElementById('dinnerInput').value.trim();
+            const snack = document.getElementById('snackInput').value.trim();
+
+            // 少なくとも1つは入力が必要
+            if (!breakfast && !lunch && !dinner && !snack) {
+                alert('少なくとも1つの食事を入力してください');
                 return;
             }
+
+            // 食事データを構築
+            const meals = [];
+            if (breakfast) {
+                meals.push({
+                    meal_type: 'breakfast',
+                    description: breakfast,
+                    image_base64: photoData.breakfast
+                });
+            }
+            if (lunch) {
+                meals.push({
+                    meal_type: 'lunch',
+                    description: lunch,
+                    image_base64: photoData.lunch
+                });
+            }
+            if (dinner) {
+                meals.push({
+                    meal_type: 'dinner',
+                    description: dinner,
+                    image_base64: photoData.dinner
+                });
+            }
+            if (snack) {
+                meals.push({
+                    meal_type: 'snack',
+                    description: snack,
+                    image_base64: photoData.snack
+                });
+            }
+
+            // リクエストボディ
+            const requestBody = {
+                date: date + 'T00:00:00',
+                meals: meals
+            };
 
             // UI切り替え
             document.getElementById('inputCard').style.display = 'none';
@@ -320,15 +587,14 @@
             document.getElementById('errorBox').classList.remove('show');
 
             try {
-                const response = await fetch(
-                    `/api/v1/meal/quick?description=${encodeURIComponent(mealInput)}&auto_post=false`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'X-API-Key': API_KEY
-                        }
-                    }
-                );
+                const response = await fetch('/api/v1/meal/post?auto_post=false', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': API_KEY
+                    },
+                    body: JSON.stringify(requestBody)
+                });
 
                 const data = await response.json();
 
@@ -337,7 +603,7 @@
                 }
 
                 // 結果を表示
-                displayResult(data);
+                displayResult(data, meals);
 
             } catch (error) {
                 document.getElementById('errorBox').textContent = error.message;
@@ -348,7 +614,7 @@
             }
         }
 
-        function displayResult(data) {
+        function displayResult(data, meals) {
             // PFC値
             document.getElementById('proteinValue').textContent = data.pfc.protein;
             document.getElementById('fatValue').textContent = data.pfc.fat;
@@ -362,10 +628,24 @@
             currentImageBase64 = data.image_base64;
             document.getElementById('generatedImage').src = `data:image/jpeg;base64,${data.image_base64}`;
 
+            // 食事内容をまとめる
+            const mealSummary = meals.map(m => {
+                const icons = {
+                    breakfast: '🌅',
+                    lunch: '☀️',
+                    dinner: '🌙',
+                    snack: '🍪'
+                };
+                return `${icons[m.meal_type]} ${m.description}`;
+            }).join('\n');
+
             // キャプション（PFC詳細を追加）
             currentCaption = `${data.caption}
 
-📊 PFC詳細
+📊 本日の食事
+${mealSummary}
+
+📈 PFC詳細
 P: ${data.pfc.protein}g / F: ${data.pfc.fat}g / C: ${data.pfc.carbs}g
 🔥 ${data.pfc.calories}kcal
 
@@ -395,24 +675,25 @@ P: ${data.pfc.protein}g / F: ${data.pfc.fat}g / C: ${data.pfc.carbs}g
         function downloadImage() {
             const link = document.createElement('a');
             link.href = `data:image/jpeg;base64,${currentImageBase64}`;
-            link.download = `pfc_${new Date().toISOString().slice(0,10)}.jpg`;
+            link.download = `pfc_${document.getElementById('dateInput').value}.jpg`;
             link.click();
         }
 
         function newRecord() {
             document.getElementById('inputCard').style.display = 'block';
             document.getElementById('resultCard').classList.remove('show');
-            document.getElementById('mealInput').value = '';
+            document.getElementById('breakfastInput').value = '';
+            document.getElementById('lunchInput').value = '';
+            document.getElementById('dinnerInput').value = '';
+            document.getElementById('snackInput').value = '';
             document.getElementById('errorBox').classList.remove('show');
-        }
 
-        // Enterキーで送信
-        document.getElementById('mealInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                submitMeal();
-            }
-        });
+            // 写真をリセット
+            ['breakfast', 'lunch', 'dinner', 'snack'].forEach(removePhoto);
+
+            // 日付を今日に
+            document.getElementById('dateInput').valueAsDate = new Date();
+        }
     </script>
 </body>
 </html>

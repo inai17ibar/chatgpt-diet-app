@@ -94,7 +94,7 @@ async def create_and_post(
                 break
     else:
         # Generate placeholder image with DALL-E
-        image_data = await generate_placeholder_image(pfc)
+        image_data = await generate_placeholder_image(pfc, description=description)
         mode = "text_only"
 
     # Save image locally

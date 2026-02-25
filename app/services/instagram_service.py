@@ -1,4 +1,5 @@
 import tempfile
+import time
 from pathlib import Path
 
 from instagrapi import Client
@@ -22,6 +23,29 @@ class InstagramService:
         self.session_file = Path("instagram_session.json")
         self._logged_in = False
         self._last_error = None
+
+        # デバイス情報を設定（ボット検出回避）
+        self.client.set_locale("ja_JP")
+        self.client.set_timezone_offset(9 * 3600)  # JST (UTC+9)
+
+        # リアルなiPhoneデバイスをシミュレート
+        self.client.set_device({
+            "app_version": "269.0.0.18.75",
+            "android_version": 26,
+            "android_release": "8.0.0",
+            "dpi": "480dpi",
+            "resolution": "1080x1920",
+            "manufacturer": "OnePlus",
+            "device": "devitron",
+            "model": "6T Dev",
+            "cpu": "qcom",
+            "version_code": "314665256",
+        })
+
+        # User-Agentを設定
+        self.client.set_user_agent(
+            "Instagram 269.0.0.18.75 Android (26/8.0.0; 480dpi; 1080x1920; OnePlus; 6T Dev; devitron; qcom; ja_JP; 314665256)"
+        )
 
     def get_last_error(self) -> str | None:
         """最後のエラーメッセージを取得"""
@@ -49,7 +73,8 @@ class InstagramService:
                 except Exception as e:
                     print(f"Session load failed: {e}, attempting fresh login...")
 
-            # Fresh login
+            # Fresh login with delay to appear more human-like
+            time.sleep(2)  # 少し待機してから新規ログイン
             self.client.login(settings.instagram_username, settings.instagram_password)
             self.client.dump_settings(self.session_file)
             self._logged_in = True

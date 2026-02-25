@@ -1,0 +1,56 @@
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
+
+from app.config import settings
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class MealLog(Base):
+    """食事ログのDBモデル"""
+
+    __tablename__ = "meal_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    date = Column(DateTime, nullable=False)
+
+    # PFC データ
+    protein = Column(Float, nullable=False)
+    fat = Column(Float, nullable=False)
+    carbs = Column(Float, nullable=False)
+    calories = Column(Float, nullable=False)
+
+    # 食事情報
+    meal_description = Column(Text, nullable=True)
+    ai_comment = Column(Text, nullable=True)
+
+    # Instagram投稿情報
+    instagram_post_id = Column(String(100), nullable=True)
+    caption = Column(Text, nullable=True)
+    image_path = Column(String(500), nullable=True)
+
+    # モード（photo / text_only）
+    mode = Column(String(20), default="text_only")
+
+
+# Database engine and session
+engine = create_async_engine(settings.database_url, echo=False)
+async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+
+async def init_db():
+    """データベースを初期化"""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
+async def get_session() -> AsyncSession:
+    """セッションを取得"""
+    async with async_session() as session:
+        yield session

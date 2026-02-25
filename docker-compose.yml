@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./images:/app/images
+      - ./diet_app.db:/app/diet_app.db
+      - ./instagram_session.json:/app/instagram_session.json
+    restart: unless-stopped

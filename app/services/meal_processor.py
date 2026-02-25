@@ -1,0 +1,140 @@
+import base64
+from datetime import datetime
+from pathlib import Path
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import settings
+from app.models.database import MealLog
+from app.models.schemas import DailyMealInput, MealInput, PFCData, PostResult
+from app.services.instagram_service import instagram_service
+from app.services.openai_service import (
+    analyze_meal_from_image,
+    analyze_meal_from_text,
+    generate_caption,
+    generate_placeholder_image,
+)
+
+
+async def process_single_meal(meal: MealInput) -> PFCData:
+    """単一の食事を処理してPFCを計算"""
+    if meal.has_image():
+        return await analyze_meal_from_image(
+            meal.image_base64, additional_info=meal.description or ""
+        )
+    elif meal.description:
+        return await analyze_meal_from_text(meal.description)
+    else:
+        raise ValueError("食事の写真または説明が必要です")
+
+
+async def process_daily_meals(daily_input: DailyMealInput) -> PFCData:
+    """1日分の食事を処理して合計PFCを計算"""
+    # Simple mode: total_description only
+    if daily_input.total_description:
+        return await analyze_meal_from_text(daily_input.total_description)
+
+    # Process each meal and sum up
+    if not daily_input.meals:
+        raise ValueError("食事情報がありません")
+
+    total_pfc = PFCData(protein=0, fat=0, carbs=0, calories=0, comment="")
+    comments = []
+
+    for meal in daily_input.meals:
+        pfc = await process_single_meal(meal)
+        total_pfc.protein += pfc.protein
+        total_pfc.fat += pfc.fat
+        total_pfc.carbs += pfc.carbs
+        total_pfc.calories += pfc.calories
+        if pfc.comment:
+            comments.append(pfc.comment)
+
+    # Round values
+    total_pfc.protein = round(total_pfc.protein, 1)
+    total_pfc.fat = round(total_pfc.fat, 1)
+    total_pfc.carbs = round(total_pfc.carbs, 1)
+    total_pfc.calories = round(total_pfc.calories, 0)
+
+    # Combine comments
+    if comments:
+        total_pfc.comment = comments[-1]  # Use last comment
+
+    return total_pfc
+
+
+async def create_and_post(
+    daily_input: DailyMealInput, session: AsyncSession, auto_post: bool = True
+) -> PostResult:
+    """食事を処理して投稿まで行う"""
+
+    # Check if we have any photos
+    has_photo = any(meal.has_image() for meal in daily_input.meals)
+
+    # Calculate PFC
+    pfc = await process_daily_meals(daily_input)
+
+    # Get description for caption
+    if daily_input.total_description:
+        description = daily_input.total_description
+    else:
+        descriptions = [m.description for m in daily_input.meals if m.description]
+        description = "、".join(descriptions) if descriptions else "本日の食事"
+
+    # Generate caption
+    caption = await generate_caption(pfc, description=description, has_photo=has_photo)
+
+    # Prepare image
+    if has_photo:
+        # Use the first photo
+        for meal in daily_input.meals:
+            if meal.has_image():
+                image_data = base64.b64decode(meal.image_base64)
+                mode = "photo"
+                break
+    else:
+        # Generate placeholder image with DALL-E
+        image_data = await generate_placeholder_image(pfc)
+        mode = "text_only"
+
+    # Save image locally
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    image_filename = f"meal_{timestamp}.jpg"
+    image_path = settings.images_dir / image_filename
+    image_path.write_bytes(image_data)
+
+    # Post to Instagram
+    post_id = None
+    error = None
+
+    if auto_post:
+        try:
+            post_id = await instagram_service.post_photo(image_data, caption)
+        except Exception as e:
+            error = str(e)
+
+    # Save to database
+    meal_log = MealLog(
+        date=daily_input.date,
+        protein=pfc.protein,
+        fat=pfc.fat,
+        carbs=pfc.carbs,
+        calories=pfc.calories,
+        meal_description=description,
+        ai_comment=pfc.comment,
+        instagram_post_id=post_id,
+        caption=caption,
+        image_path=str(image_path),
+        mode=mode,
+    )
+    session.add(meal_log)
+    await session.commit()
+
+    return PostResult(
+        success=post_id is not None or not auto_post,
+        post_id=post_id,
+        image_url=str(image_path),
+        caption=caption,
+        pfc=pfc,
+        error=error,
+    )

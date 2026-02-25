@@ -10,8 +10,9 @@ class Settings(BaseSettings):
     openai_api_key: str
 
     # Instagram
-    instagram_username: str
-    instagram_password: str
+    instagram_username: str = ""
+    instagram_password: str = ""
+    instagram_enabled: bool = False  # Instagram投稿を有効にするかどうか
 
     # Server
     host: str = "0.0.0.0"

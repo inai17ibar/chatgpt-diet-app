@@ -103,17 +103,19 @@ async def create_and_post(
     image_path = settings.images_dir / image_filename
     image_path.write_bytes(image_data)
 
-    # Post to Instagram
+    # Post to Instagram (only if enabled)
     post_id = None
     error = None
 
-    if auto_post:
+    if auto_post and settings.instagram_enabled:
         try:
             post_id = await instagram_service.post_photo(image_data, caption)
         except Exception as e:
             # Get detailed error message if available
             detailed_error = instagram_service.get_last_error()
             error = detailed_error if detailed_error else str(e)
+    elif auto_post and not settings.instagram_enabled:
+        error = "Instagram投稿は無効です。手動で投稿してください。"
 
     # Save to database
     meal_log = MealLog(
@@ -132,8 +134,11 @@ async def create_and_post(
     session.add(meal_log)
     await session.commit()
 
+    # Success if: posted to Instagram, or auto_post is off, or Instagram is disabled
+    success = post_id is not None or not auto_post or not settings.instagram_enabled
+
     return PostResult(
-        success=post_id is not None or not auto_post,
+        success=success,
         post_id=post_id,
         image_url=str(image_path),
         caption=caption,

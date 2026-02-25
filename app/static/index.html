@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PFC記録 - ChatGPT Diet App</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .pfc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .pfc-item {
+            text-align: center;
+            padding: 16px 8px;
+            background: #f5f5f5;
+            border-radius: 12px;
+        }
+
+        .pfc-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .pfc-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .pfc-item.protein { background: #e3f2fd; }
+        .pfc-item.protein .pfc-value { color: #1976d2; }
+
+        .pfc-item.fat { background: #fff3e0; }
+        .pfc-item.fat .pfc-value { color: #f57c00; }
+
+        .pfc-item.carbs { background: #e8f5e9; }
+        .pfc-item.carbs .pfc-value { color: #388e3c; }
+
+        .pfc-item.calories { background: #fce4ec; }
+        .pfc-item.calories .pfc-value { color: #c2185b; }
+
+        .ai-comment {
+            background: #f0f4ff;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .ai-comment-label {
+            font-size: 0.8rem;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .generated-image {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .caption-box {
+            background: #f5f5f5;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .action-buttons button {
+            padding: 14px;
+            font-size: 14px;
+        }
+
+        .btn-secondary {
+            background: #333;
+        }
+
+        .btn-instagram {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .new-record-btn {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ PFC記録</h1>
+
+        <!-- 入力フォーム -->
+        <div class="card" id="inputCard">
+            <div class="input-group">
+                <label for="mealInput">今日食べたものを入力</label>
+                <textarea id="mealInput" placeholder="例：サラダチキン、味噌汁、ご飯半分"></textarea>
+            </div>
+            <button id="submitBtn" onclick="submitMeal()">
+                PFCを計算する
+            </button>
+        </div>
+
+        <!-- ローディング -->
+        <div class="card loading" id="loadingCard">
+            <div class="spinner"></div>
+            <p>AIが分析中...</p>
+            <p style="font-size: 0.9rem; color: #666; margin-top: 8px;">画像生成に時間がかかる場合があります</p>
+        </div>
+
+        <!-- エラー表示 -->
+        <div class="error" id="errorBox"></div>
+
+        <!-- 結果表示 -->
+        <div class="card result" id="resultCard">
+            <div class="pfc-grid">
+                <div class="pfc-item protein">
+                    <div class="pfc-value" id="proteinValue">-</div>
+                    <div class="pfc-label">タンパク質(g)</div>
+                </div>
+                <div class="pfc-item fat">
+                    <div class="pfc-value" id="fatValue">-</div>
+                    <div class="pfc-label">脂質(g)</div>
+                </div>
+                <div class="pfc-item carbs">
+                    <div class="pfc-value" id="carbsValue">-</div>
+                    <div class="pfc-label">炭水化物(g)</div>
+                </div>
+                <div class="pfc-item calories">
+                    <div class="pfc-value" id="caloriesValue">-</div>
+                    <div class="pfc-label">kcal</div>
+                </div>
+            </div>
+
+            <div class="ai-comment">
+                <div class="ai-comment-label">💬 AIコメント</div>
+                <div id="aiComment">-</div>
+            </div>
+
+            <img class="generated-image" id="generatedImage" src="" alt="生成画像">
+
+            <label>📝 キャプション</label>
+            <div class="caption-box" id="captionBox"></div>
+
+            <div class="action-buttons">
+                <button class="btn-secondary" onclick="copyCaption()">
+                    📋 コピー
+                </button>
+                <button class="btn-secondary" onclick="downloadImage()">
+                    💾 画像保存
+                </button>
+            </div>
+
+            <button class="new-record-btn" onclick="newRecord()">
+                ➕ 新しく記録する
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = '26c128ce99310f92692f649f3c15abc17a8927344e2fb527a5c41e82feec8fd4';
+        let currentImageBase64 = '';
+        let currentCaption = '';
+
+        async function submitMeal() {
+            const mealInput = document.getElementById('mealInput').value.trim();
+            if (!mealInput) {
+                alert('食事内容を入力してください');
+                return;
+            }
+
+            // UI切り替え
+            document.getElementById('inputCard').style.display = 'none';
+            document.getElementById('loadingCard').classList.add('show');
+            document.getElementById('resultCard').classList.remove('show');
+            document.getElementById('errorBox').classList.remove('show');
+
+            try {
+                const response = await fetch(
+                    `/api/v1/meal/quick?description=${encodeURIComponent(mealInput)}&auto_post=false`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'X-API-Key': API_KEY
+                        }
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'APIエラーが発生しました');
+                }
+
+                // 結果を表示
+                displayResult(data);
+
+            } catch (error) {
+                document.getElementById('errorBox').textContent = error.message;
+                document.getElementById('errorBox').classList.add('show');
+                document.getElementById('inputCard').style.display = 'block';
+            } finally {
+                document.getElementById('loadingCard').classList.remove('show');
+            }
+        }
+
+        function displayResult(data) {
+            // PFC値
+            document.getElementById('proteinValue').textContent = data.pfc.protein;
+            document.getElementById('fatValue').textContent = data.pfc.fat;
+            document.getElementById('carbsValue').textContent = data.pfc.carbs;
+            document.getElementById('caloriesValue').textContent = data.pfc.calories;
+
+            // AIコメント
+            document.getElementById('aiComment').textContent = data.pfc.comment || '-';
+
+            // 画像
+            currentImageBase64 = data.image_base64;
+            document.getElementById('generatedImage').src = `data:image/jpeg;base64,${data.image_base64}`;
+
+            // キャプション（PFC詳細を追加）
+            currentCaption = `${data.caption}
+
+📊 PFC詳細
+P: ${data.pfc.protein}g / F: ${data.pfc.fat}g / C: ${data.pfc.carbs}g
+🔥 ${data.pfc.calories}kcal
+
+💬 ${data.pfc.comment || ''}`;
+
+            document.getElementById('captionBox').textContent = currentCaption;
+
+            // 結果カードを表示
+            document.getElementById('resultCard').classList.add('show');
+        }
+
+        function copyCaption() {
+            navigator.clipboard.writeText(currentCaption).then(() => {
+                alert('クリップボードにコピーしました！');
+            }).catch(err => {
+                // フォールバック
+                const textarea = document.createElement('textarea');
+                textarea.value = currentCaption;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('クリップボードにコピーしました！');
+            });
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.href = `data:image/jpeg;base64,${currentImageBase64}`;
+            link.download = `pfc_${new Date().toISOString().slice(0,10)}.jpg`;
+            link.click();
+        }
+
+        function newRecord() {
+            document.getElementById('inputCard').style.display = 'block';
+            document.getElementById('resultCard').classList.remove('show');
+            document.getElementById('mealInput').value = '';
+            document.getElementById('errorBox').classList.remove('show');
+        }
+
+        // Enterキーで送信
+        document.getElementById('mealInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitMeal();
+            }
+        });
+    </script>
+</body>
+</html>

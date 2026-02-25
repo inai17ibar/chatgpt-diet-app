@@ -1,7 +1,10 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
 from app.config import settings
@@ -37,9 +40,18 @@ app.add_middleware(
 # ルーター登録
 app.include_router(router, prefix="/api/v1")
 
+# 静的ファイルのディレクトリ
+STATIC_DIR = Path(__file__).parent / "static"
+
 
 @app.get("/")
 async def root():
+    """フロントエンドページを表示"""
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/api")
+async def api_info():
     return {
         "message": "ChatGPT Diet App API",
         "docs": "/docs",

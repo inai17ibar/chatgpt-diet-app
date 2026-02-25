@@ -70,20 +70,29 @@ class InstagramService:
                     return True
                 except LoginRequired:
                     print("Session expired, attempting fresh login...")
+                    # セッションファイルを削除
+                    self.session_file.unlink()
                 except Exception as e:
                     print(f"Session load failed: {e}, attempting fresh login...")
+                    # セッションファイルを削除
+                    if self.session_file.exists():
+                        self.session_file.unlink()
 
             # Fresh login with delay to appear more human-like
-            time.sleep(2)  # 少し待機してから新規ログイン
+            time.sleep(3)  # 少し長めに待機してから新規ログイン
+            print(f"Attempting login with username: {settings.instagram_username}")
             self.client.login(settings.instagram_username, settings.instagram_password)
             self.client.dump_settings(self.session_file)
             self._logged_in = True
             print("Instagram login successful (fresh login)")
             return True
 
-        except BadPassword:
-            self._last_error = "パスワードが間違っています"
+        except BadPassword as e:
+            self._last_error = f"パスワードが間違っています (詳細: {e})"
             print(f"Instagram login failed: {self._last_error}")
+            # セッションファイルを削除して次回クリーンな状態でリトライ
+            if self.session_file.exists():
+                self.session_file.unlink()
             return False
 
         except TwoFactorRequired:

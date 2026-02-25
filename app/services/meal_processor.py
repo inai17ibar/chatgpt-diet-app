@@ -137,10 +137,14 @@ async def create_and_post(
     # Success if: posted to Instagram, or auto_post is off, or Instagram is disabled
     success = post_id is not None or not auto_post or not settings.instagram_enabled
 
+    # Encode image as Base64 for mobile sharing
+    image_base64 = base64.b64encode(image_data).decode("utf-8")
+
     return PostResult(
         success=success,
         post_id=post_id,
         image_url=str(image_path),
+        image_base64=image_base64,
         caption=caption,
         pfc=pfc,
         error=error,

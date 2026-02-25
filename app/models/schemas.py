@@ -46,6 +46,7 @@ class PostResult(BaseModel):
     success: bool
     post_id: str | None = None
     image_url: str | None = None
+    image_base64: str | None = Field(default=None, description="生成画像（Base64 JPEG）")
     caption: str | None = None
     pfc: PFCData | None = None
     error: str | None = None

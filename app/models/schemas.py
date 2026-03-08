@@ -52,6 +52,31 @@ class PostResult(BaseModel):
     error: str | None = None
 
 
+class MealLogResponse(BaseModel):
+    """食事ログのレスポンス"""
+
+    id: int
+    date: str
+    protein: float
+    fat: float
+    carbs: float
+    calories: float
+    meal_description: str | None = None
+    ai_comment: str | None = None
+    mode: str = "text_only"
+
+
+class DailySummaryResponse(BaseModel):
+    """日別サマリーのレスポンス"""
+
+    date: str
+    total_protein: float
+    total_fat: float
+    total_carbs: float
+    total_calories: float
+    meal_count: int
+
+
 class HealthCheckResponse(BaseModel):
     status: str
     version: str = "0.1.0"

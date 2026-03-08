@@ -1,15 +1,18 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.database import get_session
+from app.models.database import MealLog, get_session
 from app.models.schemas import (
     DailyMealInput,
+    DailySummaryResponse,
     HealthCheckResponse,
     MealInput,
+    MealLogResponse,
     MealType,
     PostResult,
 )
@@ -104,3 +107,76 @@ async def shortcut_endpoint(
     )
     result = await create_and_post(daily_input, session, auto_post=auto_post)
     return result
+
+
+@router.get("/meal/history", response_model=list[MealLogResponse])
+async def get_meal_history(
+    start_date: str | None = Query(None, description="開始日 (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="終了日 (YYYY-MM-DD)"),
+    session: AsyncSession = Depends(get_session),
+    _: None = Depends(verify_api_key),
+):
+    """食事ログの履歴を取得"""
+    query = select(MealLog).order_by(MealLog.date.desc())
+
+    if start_date:
+        query = query.where(MealLog.date >= datetime.fromisoformat(start_date))
+    if end_date:
+        query = query.where(
+            MealLog.date <= datetime.fromisoformat(end_date + "T23:59:59")
+        )
+
+    result = await session.execute(query)
+    logs = result.scalars().all()
+
+    return [
+        MealLogResponse(
+            id=log.id,
+            date=log.date.strftime("%Y-%m-%d"),
+            protein=log.protein,
+            fat=log.fat,
+            carbs=log.carbs,
+            calories=log.calories,
+            meal_description=log.meal_description,
+            ai_comment=log.ai_comment,
+            mode=log.mode or "text_only",
+        )
+        for log in logs
+    ]
+
+
+@router.get("/meal/daily-summary", response_model=list[DailySummaryResponse])
+async def get_daily_summary(
+    days: int = Query(30, description="取得する日数"),
+    session: AsyncSession = Depends(get_session),
+    _: None = Depends(verify_api_key),
+):
+    """日別のPFCサマリーを取得"""
+    query = (
+        select(
+            func.date(MealLog.date).label("date"),
+            func.sum(MealLog.protein).label("total_protein"),
+            func.sum(MealLog.fat).label("total_fat"),
+            func.sum(MealLog.carbs).label("total_carbs"),
+            func.sum(MealLog.calories).label("total_calories"),
+            func.count(MealLog.id).label("meal_count"),
+        )
+        .group_by(func.date(MealLog.date))
+        .order_by(func.date(MealLog.date).desc())
+        .limit(days)
+    )
+
+    result = await session.execute(query)
+    rows = result.all()
+
+    return [
+        DailySummaryResponse(
+            date=str(row.date),
+            total_protein=row.total_protein or 0,
+            total_fat=row.total_fat or 0,
+            total_carbs=row.total_carbs or 0,
+            total_calories=row.total_calories or 0,
+            meal_count=row.meal_count,
+        )
+        for row in rows
+    ]

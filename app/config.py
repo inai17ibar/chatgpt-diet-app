@@ -21,7 +21,19 @@ class Settings(BaseSettings):
 
     # Paths
     images_dir: Path = Path("./images")
-    database_url: str = "sqlite+aiosqlite:///./diet_app.db"
+    data_dir: Path = Path("/data")  # Railway Volume用（本番）
+    database_url: str | None = None  # 環境変数で上書き可能
+
+    @property
+    def db_url(self) -> str:
+        """データベースURLを取得（環境変数 > data_dir > デフォルト）"""
+        if self.database_url:
+            return self.database_url
+        # /data ディレクトリが存在する場合はそちらを使用（Railway Volume）
+        if self.data_dir.exists():
+            return f"sqlite+aiosqlite:///{self.data_dir}/diet_app.db"
+        # ローカル開発用
+        return "sqlite+aiosqlite:///./diet_app.db"
 
     # Instagram hashtags
     default_hashtags: list[str] = [

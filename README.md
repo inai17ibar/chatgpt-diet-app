@@ -143,17 +143,55 @@ iPhone → ショートカット
 
 ## デプロイ
 
-### Railway / Render / Fly.io
+### 本番環境（Railway）
 
-1. リポジトリをプッシュ
-2. 環境変数を設定
-3. Dockerfileでデプロイ
+現在のデプロイ先: https://chatgpt-diet-app-production.up.railway.app/
+
+#### 自動デプロイ
+
+GitHubの`main`ブランチにプッシュすると自動デプロイされます：
+
+```bash
+git push origin main
+```
+
+#### Railwayダッシュボード
+
+- https://railway.app/dashboard でプロジェクトを管理
+- 環境変数、ログ、メトリクスを確認可能
+
+#### 環境変数の設定（Railway）
+
+Railwayダッシュボードで以下の環境変数を設定：
+
+| 変数名 | 説明 | 必須 |
+|--------|------|------|
+| `OPENAI_API_KEY` | OpenAI APIキー | ✓ |
+| `SECRET_KEY` | API認証キー | ✓ |
+| `INSTAGRAM_USERNAME` | Instagramユーザー名 | |
+| `INSTAGRAM_PASSWORD` | Instagramパスワード | |
+| `HOST` | ホスト（デフォルト: 0.0.0.0） | |
+| `PORT` | ポート（Railwayが自動設定） | |
+
+#### デプロイ時の注意事項
+
+1. **データベース**: SQLiteを使用しているため、再デプロイ時にデータが消える可能性あり。永続化が必要な場合はRailway Volumeを設定するか、外部DBに移行を検討
+2. **Instagram連携**: 初回ログイン時に2段階認証が必要な場合あり。ローカルで先にログインしてセッションを確認することを推奨
+3. **APIキーの管理**: 環境変数は絶対にコードにハードコードしない
+
+### 新規Railwayプロジェクトの作成
+
+1. [Railway](https://railway.app/)にログイン
+2. 「New Project」→「Deploy from GitHub repo」を選択
+3. このリポジトリを選択
+4. 環境変数を設定
+5. デプロイが自動的に開始される
 
 ### VPS (Ubuntu)
 
 ```bash
 # Clone
-git clone https://github.com/your/chatgpt-diet-app.git
+git clone https://github.com/inai17ibar/chatgpt-diet-app.git
 cd chatgpt-diet-app
 
 # Setup
